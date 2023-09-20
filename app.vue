@@ -4,7 +4,7 @@ import { Line } from 'vue-chartjs'
 ChartJS.register(Title, Tooltip, Legend, PointElement, LineElement, CategoryScale, LinearScale)
 
 useHead({
-  style: [{ children: 'html,body { margin: 0;  padding: 0;}' }],
+  style: [{ children: "html,body { margin: 0;  padding: 0; font-family: 'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans',Meiryo,sans-serif;}'"}],
 })
 
 
@@ -101,22 +101,7 @@ const chartOptions = {
     easing:"easeOutCirc",
     duration: 500,
   },
-  plugins:[{
-    afterDraw: chart => {
-      var ctx = chart.chart.ctx;
-      ctx.save();
-      ctx.font = "bold 14px Arial";
-      ctx.fillStyle = "black";
-      var y = 20;
 
-      ctx.textAlign = 'left';
-      ctx.fillText('(人)', 30, y);
-
-      ctx.textAlign = 'right';
-      ctx.fillText('(年)', chart.chart.width - 10, 350);
-      ctx.restore();
-    }
-  }],
   
 
 }
