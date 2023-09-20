@@ -101,10 +101,22 @@ const chartOptions = {
     easing:"easeOutCirc",
     duration: 500,
   },
-  scaleLabel: {
-    display: true,
-    labelString: "文字列"
-  },
+  plugins:[{
+    afterDraw: chart => {
+      var ctx = chart.chart.ctx;
+      ctx.save();
+      ctx.font = "bold 14px Arial";
+      ctx.fillStyle = "black";
+      var y = 20;
+
+      ctx.textAlign = 'left';
+      ctx.fillText('(人)', 30, y);
+
+      ctx.textAlign = 'right';
+      ctx.fillText('(年)', chart.chart.width - 10, 350);
+      ctx.restore();
+    }
+  }],
   
 
 }
@@ -155,18 +167,15 @@ const removeUnselectedPrefectures = () => {
 
 <template>
   <header><h1>都道府県別人口グラフ</h1></header>
-  
   <main class="main">
     <p v-if="errorMessage">{{ errorMessage }}</p>
     <div class="graph">
-      
       <div v-if="!isShownFirst" class="graph-descrption">
         <p>人口グラフを表示したい<br class="br">都道府県を選んでください</p>
       </div>
       <Line v-if="isShownChart" id="my-chart-id" :options="chartOptions" :data="chartData" class="chart"/>
-      <Spinner v-else></Spinner>
+      <Spinner v-if="isShownFirst&&!isShownChart"></Spinner>
     </div>
-
     <div>
       <div class="prefecture">
         <div v-for="prefecture in prefectureLists" :key="prefecture.prefCode" class="prefecture-box">
@@ -177,6 +186,7 @@ const removeUnselectedPrefectures = () => {
     </div>
   </main>
 </template>
+
 
 <style scoped>
 @import "@/assets/css/reset.css";
