@@ -3,8 +3,10 @@ import { Chart as ChartJS, Title, Tooltip, Legend, PointElement, LineElement, Ca
 import { Line } from 'vue-chartjs'
 ChartJS.register(Title, Tooltip, Legend, PointElement, LineElement, CategoryScale, LinearScale)
 
+useHead({
+  style: [{ children: 'html,body { margin: 0;  padding: 0;}' }],
+})
 
-let errorMessage = ref("")
 
 
 //カラーコードの生成
@@ -26,7 +28,7 @@ while (colorCodes.length < prefectureLength) {
 
 
 const url = "https://opendata.resas-portal.go.jp/api/v1/"
-const key = "VB5sRHXcmpioPHgR1hyKHHVkhD3jn796dLooBiee"
+const key = import.meta.env.VITE_API_KEY
 const headers = new Headers({
   "x-api-key": key,
   "Content-Type": "application/json;charset=UTF-8"
@@ -87,22 +89,33 @@ await getPrefecture()
 
 
 
-//グラフの生成
+//グラフの設定
 let chartData = reactive({
   labels: years,
-  datasets: [
-
-  ]
+  datasets: []
 })
 const chartOptions = {
-  responsive: true
+  responsive: true,
+  maintainAspectRatio: false,
+  animation:{
+    easing:"easeOutCirc",
+    duration: 500,
+  },
+  scaleLabel: {
+    display: true,
+    labelString: "文字列"
+  },
+  
+
 }
 
-let showChart = ref(false) // 初めはグラフを非表示に設定
+let isShownChart = ref(false)
+let isShownFirst = ref(false)
 let datasets = ref([])
 let previouslySelectedPrefectureLists = ref([])
 watch(prefectureLists, (newVal, oldVal) => {
-  showChart.value = false
+  isShownChart.value = false
+  isShownFirst.value = true
   const newlySelectedPrefecture = newVal.find(prefecture => !previouslySelectedPrefectureLists.value.includes(prefecture) && prefecture.isSelected)
   previouslySelectedPrefectureLists.value = newVal.filter(prefecture => prefecture.isSelected)
   if (newlySelectedPrefecture) {
@@ -120,12 +133,12 @@ watch(prefectureLists, (newVal, oldVal) => {
       chartData.labels = years
       chartData.datasets = datasets.value
       removeUnselectedPrefectures()
-      showChart.value = true
+      isShownChart.value = true
     })
   }else{
     removeUnselectedPrefectures()
     setTimeout(()=>{
-      showChart.value = true
+      isShownChart.value = true
     },100)//処理を遅らせないとグラフが反映されないため
   }
 }, { deep: true })
@@ -141,20 +154,24 @@ const removeUnselectedPrefectures = () => {
 
 
 <template>
-  <header></header>
+  <header><h1>都道府県別人口グラフ</h1></header>
+  
   <main class="main">
     <p v-if="errorMessage">{{ errorMessage }}</p>
     <div class="graph">
-      <div v-if="showChart" class="graph-content">
-      <Line id="my-chart-id" :options="chartOptions" :data="chartData"/>
+      
+      <div v-if="!isShownFirst" class="graph-descrption">
+        <p>人口グラフを表示したい<br class="br">都道府県を選んでください</p>
       </div>
+      <Line v-if="isShownChart" id="my-chart-id" :options="chartOptions" :data="chartData" class="chart"/>
+      <Spinner v-else></Spinner>
     </div>
 
     <div>
       <div class="prefecture">
         <div v-for="prefecture in prefectureLists" :key="prefecture.prefCode" class="prefecture-box">
             <input type="checkbox" v-model="prefecture.isSelected" :id="prefecture.prefCode" class="prefecture-input">
-            <label :for="prefecture.prefCode" class="prefecture-button">{{ prefecture.prefName }}</label>
+            <label :for="prefecture.prefCode" class="prefecture-button" :class="{'prefecture-button-selected': prefecture.isSelected}">{{ prefecture.prefName }}</label>
         </div>
       </div>
     </div>
@@ -162,30 +179,114 @@ const removeUnselectedPrefectures = () => {
 </template>
 
 <style scoped>
+@import "@/assets/css/reset.css";
+
+header{
+  display: block;
+  border-bottom: 1px solid #262626;
+  height: 40px;
+  width: 100%;
+  color: #262626;
+  text-align: center;
+}
+header h1{
+  font-size: 17px;
+  line-height: 40px;
+}
 
 main{
   width: calc(100% - 40px);
   max-width: 800px;
   margin: 0 auto;
+  color: #262626;
 }
 
 
 .graph {
-  width: 600px;
-  height: 300px;
+  width: 100%;
+  height: 400px;
+  margin:30px 0;
+}
+.graph-descrption{
+  width: 100%;
+  height: 100%;
+  position: relative;
+  text-align: center;
+}
+.graph-descrption p{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
+  width: 100%;
+  line-height: 1.8;
+}
+.br{
+  display: none;
+}
+.chart{
+  width: 100%;
 }
 
 .prefecture{
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
 }
 .prefecture-box{
   display: block;
-  width: 20%;
-
+  width: calc(16.6% - 10px);
+  margin: 0 5px 10px;
 }
-@media screen and (max-width: 599px){
-
+.prefecture-input{
+  display: none;
 }
+.prefecture-button{
+  display: block;
+  background-color: #f5f5f5;
+  color: #262626;
+  border: 2px solid #262626;
+  text-align: center;
+  height: 30px;
+  line-height: 30px;
+  border-radius: 20px;
+  transition: 0.3s;
+  font-size: 14px;
+}
+.prefecture-button-selected{
+  background-color: #262626;
+  color: #F5F5F5;
+  border: 2px solid #262626;
+}
+
+
+@media screen and (max-width: 768px){
+
+  main{
+    width: calc(100% - 20px);
+  }
+  .graph {
+    width: 100%;
+    height: 300px;
+    margin:10px 0 20px;
+  }
+  .br{
+    display: block;
+  }
+  .prefecture-box{
+    display: block;
+    width: calc(25% - 10px);
+    margin: 0 5px 10px;
+  }
+  .prefecture-button{
+    padding: 3px 0;
+    font-size: 13px;
+    font-weight: 700;
+    height: 23px;
+    line-height: 23px;
+    }
+}
+
+
 </style>
